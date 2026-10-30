@@ -1,0 +1,556 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>piza.dav</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bowlby+One&family=DM+Sans:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* Layout: a pizza-shop menu board. Masthead with the name, two tabs (MySQL / PHP), each program is a "menu item" with a code slab. */
+:root {
+  --bg: #FBF6EF;
+  --surface: #FFFFFF;
+  --fg: #2A1A14;
+  --muted: #7A675C;
+  --line: #E8DDD0;
+  --tomato: #C9301C;
+  --cheese: #E9A71A;
+  --basil: #3F7D3C;
+  --code-bg: #2A1A14;
+  --code-fg: #F6E9D8;
+  --code-muted: #B79F8C;
+  --font-display: "Bowlby One", "Arial Black", Impact, sans-serif;
+  --font-body: "DM Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-code: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #1A110D;
+    --surface: #251913;
+    --fg: #F6E9D8;
+    --muted: #B79F8C;
+    --line: #3B2A21;
+    --tomato: #F0553F;
+    --cheese: #F2B84B;
+    --basil: #7DBB78;
+    --code-bg: #0F0906;
+    --code-fg: #F6E9D8;
+    --code-muted: #9C8574;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #1A110D;
+  --surface: #251913;
+  --fg: #F6E9D8;
+  --muted: #B79F8C;
+  --line: #3B2A21;
+  --tomato: #F0553F;
+  --cheese: #F2B84B;
+  --basil: #7DBB78;
+  --code-bg: #0F0906;
+  --code-fg: #F6E9D8;
+  --code-muted: #9C8574;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 56px;
+}
+.wrap { max-width: 860px; margin: 0 auto; display: flex; flex-direction: column; gap: 28px; }
+
+/* Masthead */
+.mast { display: flex; flex-direction: column; gap: 10px; padding-bottom: 22px; border-bottom: 3px solid var(--fg); }
+.mast .kicker { font-size: 12px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+h1 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(2.6rem, 11vw, 5rem);
+  line-height: 1;
+  letter-spacing: -.01em;
+  color: var(--tomato);
+  text-wrap: balance;
+}
+h1 .dot { color: var(--cheese); }
+.mast p { margin: 0; max-width: 52ch; color: var(--muted); }
+
+/* Tabs */
+.tabs { display: flex; gap: 8px; flex-wrap: wrap; }
+.tab {
+  appearance: none; cursor: pointer;
+  font: 700 15px/1 var(--font-body);
+  padding: 12px 18px;
+  border: 2px solid var(--fg);
+  border-radius: 999px;
+  background: transparent; color: var(--fg);
+}
+.tab[aria-selected="true"] { background: var(--tomato); border-color: var(--tomato); color: #FFF8EE; }
+.tab:focus-visible, .copy:focus-visible { outline: 3px solid var(--cheese); outline-offset: 2px; }
+.tab .count { font-weight: 500; opacity: .75; margin-left: 6px; }
+
+/* Program list */
+.panel { display: flex; flex-direction: column; gap: 22px; }
+.panel[hidden] { display: none; }
+.prog { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.prog-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; border-bottom: 1px dashed var(--line); padding-bottom: 6px; }
+.prog h2 { margin: 0; font-size: 1.15rem; font-weight: 700; text-wrap: balance; }
+.prog .tag { font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--basil); }
+.prog p { margin: 0; color: var(--muted); max-width: 62ch; }
+
+.slab { position: relative; min-width: 0; background: var(--code-bg); border-radius: 10px; }
+.slab pre { margin: 0; padding: 16px 16px 16px; overflow-x: auto; max-width: 100%; }
+.slab code { font-family: var(--font-code); font-size: 13.5px; line-height: 1.65; color: var(--code-fg); white-space: pre; tab-size: 4; }
+.slab-bar { display: flex; justify-content: space-between; align-items: center; padding: 8px 8px 0 16px; font: 500 12px var(--font-code); color: var(--code-muted); }
+.copy {
+  appearance: none; cursor: pointer;
+  font: 700 12px/1 var(--font-body); letter-spacing: .06em; text-transform: uppercase;
+  padding: 8px 12px; border-radius: 6px;
+  border: 1px solid var(--code-muted); background: transparent; color: var(--code-fg);
+}
+.copy:hover { background: var(--cheese); border-color: var(--cheese); color: #2A1A14; }
+
+.foot { font-size: 14px; color: var(--muted); border-top: 3px solid var(--fg); padding-top: 16px; }
+.foot b { color: var(--fg); }
+
+@media (prefers-reduced-motion: no-preference) {
+  .tab, .copy { transition: background-color .15s, color .15s, border-color .15s; }
+}
+
+.prog[hidden] { display: none; }
+.nums { display: flex; gap: 8px; flex-wrap: wrap; }
+.num { appearance: none; cursor: pointer; width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--fg); background: transparent; color: var(--fg); font: 700 16px/1 var(--font-body); }
+.num[aria-pressed="true"] { background: var(--cheese); border-color: var(--cheese); color: #2A1A14; }
+.num:focus-visible { outline: 3px solid var(--cheese); outline-offset: 2px; }
+.steps { margin: 0; padding-left: 1.4em; max-width: 62ch; display: flex; flex-direction: column; gap: 4px; }
+
+:root { --tok-kw:#FF8A5B; --tok-str:#F2C75C; --tok-com:#A8917F; --tok-var:#7FD1B9; --tok-tag:#F09AB4; --tok-num:#9CC9F5; }
+body { background-color: var(--bg); background-image: radial-gradient(var(--line) 1.2px, transparent 1.2px); background-size: 22px 22px; }
+.mast { gap: 20px; }
+.hero { display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+.hero-text { display: flex; flex-direction: column; gap: 10px; min-width: 0; flex: 1 1 260px; }
+h1 { text-shadow: 3px 3px 0 var(--cheese); }
+.ticket { align-self: flex-start; display: grid; gap: 2px; padding: 10px 18px 10px 16px; background: var(--surface); border: 2px dashed var(--fg); border-radius: 8px; box-shadow: 4px 4px 0 var(--tomato); }
+.ticket-label { font-size: 11px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+.ticket-names { font-size: 1.2rem; font-weight: 700; line-height: 1.2; }
+.ticket-class { justify-self: end; margin-top: 2px; font: 700 13px/1 var(--font-body); letter-spacing: .08em; padding: 5px 10px; border-radius: 999px; background: var(--basil); color: #FFFDF6; }
+.pizza { position: relative; flex: none; width: clamp(130px, 30vw, 200px); aspect-ratio: 1; border-radius: 50%;
+  background: repeating-conic-gradient(from 22.5deg, rgba(90,40,0,.45) 0 1.4deg, transparent 1.4deg 45deg),
+              radial-gradient(circle, var(--cheese) 0 61%, #C0392B 61% 67%, #D9923A 67% 100%);
+  box-shadow: 0 7px 0 rgba(0,0,0,.2); }
+.pep { position: absolute; width: 13%; aspect-ratio: 1; border-radius: 50%; background: #A3200F; box-shadow: inset 0 0 0 2px #7C1608; transform: translate(-50%, -50%); }
+.leaf { position: absolute; width: 10%; height: 5.5%; border-radius: 50% 50% 50% 50% / 80% 80% 20% 20%; background: var(--basil); }
+@media (prefers-reduced-motion: no-preference) {
+  .pizza { animation: spin 40s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+}
+.slab { border: 1px solid rgba(255,255,255,.08); box-shadow: 0 6px 0 rgba(0,0,0,.12); }
+.slab-bar::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: #FF5F57; box-shadow: 16px 0 0 #FEBC2E, 32px 0 0 #28C840; margin-right: 44px; }
+.slab-bar { justify-content: flex-start; gap: 0; }
+.slab-bar .copy { margin-left: auto; }
+.tk-kw { color: var(--tok-kw); font-weight: 500; }
+.tk-str { color: var(--tok-str); }
+.tk-com { color: var(--tok-com); font-style: italic; }
+.tk-var { color: var(--tok-var); }
+.tk-tag { color: var(--tok-tag); }
+.tk-num { color: var(--tok-num); }
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <header class="mast">
+    <div class="ticket" aria-label="Credits">
+      <span class="ticket-label">Made by</span>
+      <span class="ticket-names">Naveen and Davidson</span>
+      <span class="ticket-class">of IX-B</span>
+    </div>
+    <div class="hero">
+      <div class="hero-text">
+        <div class="kicker">Programs menu</div>
+        <h1>piza<span class="dot">.</span>dav</h1>
+        <p>MySQL and PHP lab programs. Pick a number, read the program, and copy it with one tap.</p>
+      </div>
+      <div class="pizza" aria-hidden="true">
+        <span class="pep" style="left:50%;top:27%"></span>
+        <span class="pep" style="left:29%;top:42%"></span>
+        <span class="pep" style="left:71%;top:41%"></span>
+        <span class="pep" style="left:40%;top:68%"></span>
+        <span class="pep" style="left:63%;top:66%"></span>
+        <span class="pep" style="left:50%;top:49%"></span>
+        <span class="leaf" style="left:38%;top:30%;transform:translate(-50%,-50%) rotate(-30deg)"></span>
+        <span class="leaf" style="left:62%;top:53%;transform:translate(-50%,-50%) rotate(40deg)"></span>
+        <span class="leaf" style="left:32%;top:58%;transform:translate(-50%,-50%) rotate(15deg)"></span>
+      </div>
+    </div>
+  </header>
+
+  <div class="tabs" role="tablist" aria-label="Program type">
+    <button class="tab" role="tab" id="tab-mysql" aria-controls="panel-mysql" aria-selected="true" data-target="mysql">MySQL<span class="count" data-count="mysql"></span></button>
+    <button class="tab" role="tab" id="tab-php" aria-controls="panel-php" aria-selected="false" data-target="php">PHP<span class="count" data-count="php"></span></button>
+  </div>
+
+  <!-- MySQL -->
+  <section class="panel" id="panel-mysql" role="tabpanel" aria-labelledby="tab-mysql">
+    <div class="nums" data-prefix="sql" role="group" aria-label="Choose a program"><button type="button" class="num" data-n="1" aria-pressed="true" aria-label="Program 1">1</button><button type="button" class="num" data-n="2" aria-pressed="false" aria-label="Program 2">2</button><button type="button" class="num" data-n="3" aria-pressed="false" aria-label="Program 3">3</button><button type="button" class="num" data-n="4" aria-pressed="false" aria-label="Program 4">4</button><button type="button" class="num" data-n="5" aria-pressed="false" aria-label="Program 5">5</button></div>
+
+    <article class="prog" data-lang="SQL" id="sql-1">
+      <div class="prog-head"><h2>1. Create the Employee table. Display Computer Science records and delete Mechanical records.</h2><span class="tag">employee</span></div>
+      <script type="text/plain">-- i) Creating table 'employee'
+create table employee(emp_code varchar(10), emp_name varchar(25), department varchar(20));
+
+-- ii) Inserting records into table
+insert into employee values('CS01', 'Sai Vaishnavi', 'Computer Science');
+insert into employee values('ME05', 'Vasudev', 'Mechanical');
+insert into employee values('CV03', 'Gorakshana', 'Civil');
+insert into employee values('CS07', 'Sanjay Mithran', 'Computer Science');
+insert into employee values('ME04', 'Harish Krishnan', 'Mechanical');
+insert into employee values('CS05', 'Pridisha', 'Computer Science');
+
+-- iii) Displaying Computer Science records
+select * from employee where department = 'Computer Science';
+
+-- iv) Delete records of Mechanical department
+delete from employee where department = 'Mechanical';</script>
+    </article>
+
+    <article class="prog" data-lang="SQL" id="sql-2" hidden>
+      <div class="prog-head"><h2>2. Create the Student table. Display totals between 375 and 450 and change a name.</h2><span class="tag">student</span></div>
+      <script type="text/plain">-- i) Creating table 'student'
+create table student(roll_no int primary key, name varchar(25), total int);
+
+-- ii) Inserting records into table
+insert into student values(9201, 'Sadvika', 410);
+insert into student values(9202, 'Varsha', 459);
+insert into student values(9203, 'Harinika', 338);
+insert into student values(9204, 'Avinash', 391);
+insert into student values(9205, 'Abhinav', 437);
+insert into student values(9206, 'Shravan', 373);
+
+-- iii) Displaying records with total between 375 and 450
+select * from student where total between 375 and 450;
+
+-- iv) Changing name of student for roll number 9205
+update student set name='Purvajith' where roll_no = 9205;</script>
+    </article>
+
+    <article class="prog" data-lang="SQL" id="sql-3" hidden>
+      <div class="prog-head"><h2>3. Create the Bus table. Change source to Tambaram and insert two more records.</h2><span class="tag">bus</span></div>
+      <script type="text/plain">-- i) Creating table 'bus'
+create table bus(bus_no varchar(5), source varchar(15), destination varchar(15));
+
+-- ii) Inserting records into table
+insert into bus values('B01', 'Chennai', 'Madurai');
+insert into bus values('B02', 'Chennai', 'Tirunelveli');
+insert into bus values('B03', 'Trichy', 'Kollam');
+insert into bus values('B04', 'Nagercoil', 'Cuddalore');
+insert into bus values('B05', 'Tenkasi', 'Bengaluru');
+insert into bus values('B06', 'Virudhunagar', 'Chennai');
+
+-- iii) Change source to 'Tambaram' where source is 'Chennai'
+update bus set source = 'Tambaram' where source = 'Chennai';
+
+-- iv) Insert two more records
+insert into bus values('B07', 'Rajapalayam', 'Guruvayur');
+insert into bus values('B08', 'Villupuram', 'Cochin');</script>
+    </article>
+
+    <article class="prog" data-lang="SQL" id="sql-4" hidden>
+      <div class="prog-head"><h2>4. Create the Bill table. Sort by cost (high to low) and show items costing more than 50.</h2><span class="tag">bill</span></div>
+      <script type="text/plain">-- i) Creating table 'bill'
+create table bill(item varchar(15), cost int, quantity int);
+
+-- ii) Inserting records into table
+insert into bill values('Biscuit', 25, 3);
+insert into bill values('Apple', 45, 5);
+insert into bill values('Rice', 63, 10);
+insert into bill values('Soap', 40, 2);
+insert into bill values('Chocolate', 75, 1);
+insert into bill values('Brush', 100, 4);
+
+-- iii) Sort records in descending order of cost
+select * from bill order by cost desc;
+
+-- iv) Displaying records whose cost is greater than 50
+select * from bill where cost > 50;</script>
+    </article>
+
+    <article class="prog" data-lang="SQL" id="sql-5" hidden>
+      <div class="prog-head"><h2>5. Create the Salary table. Set allowance to 2500 where it is below 2100 and delete pay above 30000.</h2><span class="tag">salary</span></div>
+      <script type="text/plain">-- i) Creating table 'salary'
+create table salary(name varchar(15), pay int, allowance int);
+
+-- ii) Inserting records into table
+insert into salary values('Jositha', 25000, 2500);
+insert into salary values('Lakshmi', 35000, 1500);
+insert into salary values('Celina', 20000, 2750);
+insert into salary values('Girish', 27000, 1000);
+insert into salary values('Krithik Sai', 18000, 2000);
+insert into salary values('Dakshayani', 32000, 1250);
+
+-- iii) Set allowance to 2500 if allowance is less than 2100
+update salary set allowance = 2500 where allowance < 2100;
+
+-- iv) Delete records if pay is greater than 30000
+delete from salary where pay > 30000;</script>
+    </article>
+  </section>
+
+  <!-- PHP -->
+  <section class="panel" id="panel-php" role="tabpanel" aria-labelledby="tab-php" hidden>
+    <div class="nums" data-prefix="php" role="group" aria-label="Choose a program"><button type="button" class="num" data-n="1" aria-pressed="true" aria-label="Program 1">1</button><button type="button" class="num" data-n="2" aria-pressed="false" aria-label="Program 2">2</button><button type="button" class="num" data-n="3" aria-pressed="false" aria-label="Program 3">3</button><button type="button" class="num" data-n="4" aria-pressed="false" aria-label="Program 4">4</button><button type="button" class="num" data-n="5" aria-pressed="false" aria-label="Program 5">5</button></div>
+
+    <article class="prog" data-lang="PHP" id="php-1">
+      <div class="prog-head"><h2>1. Write a PHP program to display the marks of a student in 3 subjects using multi-dimensional array.</h2><span class="tag">marks.php</span></div>
+      <ol class="steps"><li>Open XAMPP control and start “Apache” service.</li><li>Open Notepad window and type the following program.</li></ol>
+      <script type="text/plain"><html>
+<body>
+<?php
+$marks=array("Ramesh"=>array("Tam"=>78,"Eng"=>66,"Mat"=>81));
+echo "Ramesh marks in three subjects:"."<br>";
+echo "Tamil = ".$marks['Ramesh']['Tam']."<br>";
+echo "English = ".$marks['Ramesh']['Eng']."<br>";
+echo "Maths = ".$marks['Ramesh']['Mat']."<br>";
+?>
+</body>
+</html></script>
+      <ol class="steps" start="3"><li>Save the program with the name <b>marks.php</b> inside the ‘htdocs’ folder available in ‘XAMPP’ folder.</li><li>Open the web browser and type “localhost/marks.php” and press ENTER key.</li></ol>
+    </article>
+
+    <article class="prog" data-lang="PHP" id="php-2" hidden>
+      <div class="prog-head"><h2>2. Write a PHP program to print the current day using switch.</h2><span class="tag">day.php</span></div>
+      <ol class="steps"><li>Open XAMPP control and start “Apache” service.</li><li>Open Notepad window and type the following program.</li></ol>
+      <script type="text/plain"><html>
+<body>
+<?php
+$date=date("D");
+echo "Today's date is :",date("d.m.Y")."<br>";
+switch($date)
+{
+    case "Sun":
+        echo "Today is Sunday";
+        break;
+    case "Mon":
+        echo "Today is Monday";
+        break;
+    case "Tue":
+        echo "Today is Tuesday";
+        break;
+    case "Wed":
+        echo "Today is Wednesday";
+        break;
+    case "Thu":
+        echo "Today is Thursday";
+        break;
+    case "Fri":
+        echo "Today is Friday";
+        break;
+    case "Sat":
+        echo "Today is Saturday";
+        break;
+    default:
+        echo "Invalid day input";
+}
+?>
+</body>
+</html></script>
+      <ol class="steps" start="3"><li>Save the program with the name <b>day.php</b> inside the ‘htdocs’ folder available in ‘XAMPP’ folder.</li><li>Open the web browser and type “localhost/day.php” and press ENTER key.</li></ol>
+    </article>
+
+    <article class="prog" data-lang="PHP" id="php-3" hidden>
+      <div class="prog-head"><h2>3. Write a PHP program to write a message with user name and email id.</h2><span class="tag">email.php</span></div>
+      <ol class="steps"><li>Open XAMPP control and start “Apache” service.</li><li>Open Notepad window and type the following program.</li></ol>
+      <script type="text/plain"><html>
+<body>
+<?php
+if((isset($_POST['value1']) && isset($_POST['value2'])))
+{
+    $user = $_POST['value1'];
+    $email = $_POST['value2'];
+    echo "Welcome ".$user.". Your e-mail id is :".$email;
+}
+?>
+<form method="post" action="">
+    Enter the name:<input type="text" name="value1"><br>
+    Enter the e-mail id:<input type="text" name="value2"><br>
+    <input type="submit">
+</form>
+</body>
+</html></script>
+      <ol class="steps" start="3"><li>Save the program with the name <b>email.php</b> inside the ‘htdocs’ folder available in ‘XAMPP’ folder.</li><li>Open the web browser and type “localhost/email.php” and press ENTER key.</li></ol>
+    </article>
+
+    <article class="prog" data-lang="PHP" id="php-4" hidden>
+      <div class="prog-head"><h2>4. Write a PHP program to get the third value from the given array.</h2><span class="tag">array.php</span></div>
+      <ol class="steps"><li>Open XAMPP control and start “Apache” service.</li><li>Open Notepad window and type the following program.</li></ol>
+      <script type="text/plain"><html>
+<body>
+<?php
+$array_set=array(10,20,30,40,50);
+echo "The array values are :"."<br>";
+for($i=0;$i<=4;$i++)
+    echo $array_set[$i]."<br>";
+echo "The third value in the array is ".$array_set[2];
+?>
+</body>
+</html></script>
+      <ol class="steps" start="3"><li>Save the program with the name <b>array.php</b> inside the ‘htdocs’ folder available in ‘XAMPP’ folder.</li><li>Open the web browser and type “localhost/array.php” and press ENTER key.</li></ol>
+    </article>
+
+    <article class="prog" data-lang="PHP" id="php-5" hidden>
+      <div class="prog-head"><h2>5. Write a PHP program for performing addition of two numbers using functions.</h2><span class="tag">addsub.php</span></div>
+      <ol class="steps"><li>Open XAMPP control and start “Apache” service.</li><li>Open Notepad window and type the following program.</li></ol>
+      <script type="text/plain"><html>
+<body>
+<?php
+if((isset($_POST['value1']) && isset($_POST['value2'])))
+{
+    $num1 = $_POST['value1'];
+    $num2 = $_POST['value2'];
+    echo "Number 1 = ".$num1." and Number 2 = ".$num2;
+    add($num1,$num2);
+}
+function add($n1,$n2)
+{
+    $sum=$n1+$n2;
+    echo "<br>"."Sum = ".$sum;
+}
+?>
+<form method="post" action="">
+    Enter first number:<input type="text" name="value1"><br>
+    Enter second number:<input type="text" name="value2"><br>
+    <input type="submit">
+</form>
+</body>
+</html></script>
+      <ol class="steps" start="3"><li>Save the program with the name <b>addsub.php</b> inside the ‘htdocs’ folder available in ‘XAMPP’ folder.</li><li>Open the web browser and type “localhost/addsub.php” and press ENTER key.</li></ol>
+    </article>
+  </section>
+
+  <footer class="foot"><b>Note:</b> run the PHP programs from the htdocs folder in XAMPP, and the MySQL queries in phpMyAdmin or the MySQL console.</footer>
+</div>
+
+<script>
+(function () {
+  var panels = { mysql: document.getElementById("panel-mysql"), php: document.getElementById("panel-php") };
+  var tabs = document.querySelectorAll(".tab");
+
+  function esc(t) { return t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+  var LANGS = {
+    SQL: { re: /(--[^\n]*)|('[^']*')|\b(create|table|insert|into|values|select|from|where|delete|update|set|order|by|desc|asc|between|and|or|not|primary|key|int|varchar|database|use|join|on|group|having|as|count|sum)\b|\b(\d+)\b/gi,
+           cls: ["tk-com", "tk-str", "tk-kw", "tk-num"] },
+    PHP: { re: /(<\?php|\?>)|("(?:[^"\\]|\\.)*"|'[^']*')|(\$\w+)|(<\/?[a-zA-Z][^>]*>)|\b(echo|if|else|switch|case|break|default|function|for|foreach|isset|array|date|while|return)\b|\b(\d+)\b/g,
+           cls: ["tk-kw", "tk-str", "tk-var", "tk-tag", "tk-kw", "tk-num"] }
+  };
+  function highlight(text, lang) {
+    var L = LANGS[lang];
+    if (!L) return esc(text);
+    var re = L.re, out = "", last = 0, m, i;
+    re.lastIndex = 0;
+    while ((m = re.exec(text))) {
+      out += esc(text.slice(last, m.index));
+      var c = "";
+      for (i = 1; i < m.length; i++) { if (m[i] !== undefined) { c = L.cls[i - 1]; break; } }
+      out += '<span class="' + c + '">' + esc(m[0]) + "</span>";
+      last = re.lastIndex;
+      if (m[0].length === 0) re.lastIndex++;
+    }
+    return out + esc(text.slice(last));
+  }
+
+  // Build code slabs from the plain-text sources
+  document.querySelectorAll(".prog").forEach(function (art) {
+    var src = art.querySelector('script[type="text/plain"]');
+    var text = src.textContent.replace(/^\n/, "").replace(/\s+$/, "");
+    var slab = document.createElement("div");
+    slab.className = "slab";
+
+    var bar = document.createElement("div");
+    bar.className = "slab-bar";
+    var lang = document.createElement("span");
+    lang.textContent = art.getAttribute("data-lang");
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "copy";
+    btn.textContent = "Copy";
+    bar.appendChild(lang);
+    bar.appendChild(btn);
+
+    var pre = document.createElement("pre");
+    var code = document.createElement("code");
+    code.innerHTML = highlight(text, art.getAttribute("data-lang"));
+    pre.appendChild(code);
+
+    slab.appendChild(bar);
+    slab.appendChild(pre);
+    art.replaceChild(slab, src);
+
+    btn.addEventListener("click", function () {
+      function done() {
+        btn.textContent = "Copied";
+        setTimeout(function () { btn.textContent = "Copy"; }, 1500);
+      }
+      function fallback() {
+        var r = document.createRange();
+        r.selectNodeContents(code);
+        var s = window.getSelection();
+        s.removeAllRanges();
+        s.addRange(r);
+        btn.textContent = "Selected";
+        setTimeout(function () { btn.textContent = "Copy"; }, 1500);
+      }
+      try {
+        navigator.clipboard.writeText(text).then(done, fallback);
+      } catch (e) { fallback(); }
+    });
+  });
+
+  // Counts on tabs
+  Object.keys(panels).forEach(function (k) {
+    var n = panels[k].querySelectorAll(".prog").length;
+    document.querySelector('[data-count="' + k + '"]').textContent = n;
+  });
+
+  function show(name) {
+    if (!panels[name]) name = "mysql";
+    Object.keys(panels).forEach(function (k) { panels[k].hidden = (k !== name); });
+    tabs.forEach(function (t) { t.setAttribute("aria-selected", String(t.dataset.target === name)); });
+  }
+  tabs.forEach(function (t) {
+    t.addEventListener("click", function () {
+      var name = t.dataset.target;
+      show(name);
+      try { history.replaceState(null, "", "#" + name); } catch (e) { location.hash = name; }
+    });
+  });
+  window.addEventListener("hashchange", function () { show(location.hash.slice(1)); });
+  show(location.hash.slice(1));
+  document.querySelectorAll(".nums").forEach(function (group) {
+    var btns = group.querySelectorAll(".num");
+    btns.forEach(function (b) {
+      b.addEventListener("click", function () {
+        btns.forEach(function (x) {
+          var on = x === b;
+          x.setAttribute("aria-pressed", String(on));
+          document.getElementById(group.dataset.prefix + "-" + x.dataset.n).hidden = !on;
+        });
+      });
+    });
+  });
+})();
+</script>
+
+</body>
+</html>
